@@ -220,14 +220,13 @@ module.exports = function(env) {
 		 *
 		 * See: https://github.com/webpack/html-loader#advanced-options
 		 */
-		// TODO: Need to workaround Angular 2's html syntax => #id [bind] (event) *ngFor
+		// TODO: Need to workaround html syntax => #id [bind] (event)
 		htmlLoader: {
 			minimize: true,
 			removeAttributeQuotes: false,
 			caseSensitive: true,
 			customAttrSurround: [
 				[/#/, /(?:)/],
-				[/\*/, /(?:)/],
 				[/\[?\(?/, /(?:)/]
 			],
 			customAttrAssign: [/\)?\]?=/]

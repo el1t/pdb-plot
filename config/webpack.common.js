@@ -54,7 +54,6 @@ module.exports = function(options) {
 
 		/*
 		 * The entry point for the bundle
-		 * Our Angular.js app
 		 *
 		 * See: http://webpack.github.io/docs/configuration.html#entry
 		 */
