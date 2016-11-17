@@ -1,40 +1,51 @@
 import * as Vue from 'vue';
 import Component from 'vue-class-component';
+import { Setting, Graph } from 'app';
 
 @Component({
 	props: {
 		propMessage: String
 	},
 	template: `
-    <div>
-      <input v-model="msg">
-      <p>prop: {{propMessage}}</p>
-      <p>msg: {{msg}}</p>
-      <p>helloMsg: {{helloMsg}}</p>
-      <p>computed msg: {{computedMsg}}</p>
-      <button @click="greet">Greet</button>
-    </div>
-  `
-})
-class App {
+<aside id='panel'>
+	<label>
+		Iterations
+		<input v-model="settings.iterations">
+	</label>
+	<label>
+		µ Resolution
+		<input v-model="settings.muRes">
+	</label>
+	<label>
+		x Resolution
+		<input v-model="settings.xRes">
+	</label>
+	<label>
+		Canvas Width
+		<input v-model="canvas.width">
+	</label>
+	<label>
+		Canvas Height
+		<input v-model="canvas.height">
+	</label>
+	<button @click="start">Start</button>
+	<button @click="stop">Stop</button>
+	<button @click="clear">Clear</button>
+</aside>`
+} as Vue.ComponentOptions<any>)
+export default class App extends Vue {
 	// initial data
-	msg = 123
+	settings: Setting;
+	graph: Graph;
+	canvas: Vue;
 
-	// use prop values for initial data
-	helloMsg = 'Hello, ' + this.propMessage
-
-	// lifecycle hook
-	mounted () {
-		this.greet()
+	start() {
+		this.graph.start();
 	}
-
-	// computed
-	get computedMsg () {
-		return 'computed ' + this.msg
+	stop() {
+		this.graph.stop();
 	}
-
-	// method
-	greet () {
-		alert('greeting: ' + this.msg)
+	clear() {
+		this.graph.clear();
 	}
 }

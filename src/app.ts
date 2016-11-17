@@ -1,5 +1,7 @@
+import App from 'components';
+import Vue = require("vue");
 const Chart = require('chart.js');
-class Setting {
+export class Setting {
 	xRange: [number, number];
 	muRange: [number, number];
 	get xSpan() {
@@ -78,9 +80,6 @@ class Plotter {
 	}
 	// Setup canvas and draw axes
 	private initialize(): void {
-		const ratio = window.devicePixelRatio || 1;
-		this.canvas.height = window.innerHeight * ratio;
-		this.canvas.width = window.innerWidth * ratio;
 		this.imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
 		// this.canvas.minX = settings.xRange[0];
 		// this.canvas.maxX = settings.xRange[1];
@@ -106,6 +105,10 @@ class Plotter {
 	// Draw frame
 	update(): void {
 		this.context.putImageData(this.imageData, 0, 0);
+	}
+	clear(): boolean {
+		this.imageData.data.fill(0);
+		return true;
 	}
 }
 
@@ -180,7 +183,6 @@ class Outlet {
 		// Update chart every frame
 		const step = (): void => {
 			if (this.dirty || this.method === 'chart' && this.graph.workers) {
-				console.log('yes yes yes')
 				this.chart.update();
 				this.dirty = false;
 			}
@@ -197,9 +199,16 @@ class Outlet {
 		}
 		console.log('Halted');
 	}
+	clear(): boolean {
+		switch (this.method) {
+			case 'canvas':
+				return this.chart.clear();
+		}
+		return true;
+	}
 }
 
-class Graph {
+export class Graph {
 	grid: Coordinate[] = [];
 	method: 'iterate' | 'mu' = 'mu';
 	hash: Set<number>;
@@ -220,25 +229,10 @@ class Graph {
 			for (let thread = 0; thread < threads; thread++)
 				this.workers.push(new Worker('worker.js'))
 		}
-		this.outlet = new Outlet(this);
-		this.initialize();
-	}
-
-	private initialize(): void {
-		this.grid.length = 0;
-		this.hash = new Set();
-		switch (this.method) {
-			case 'iterate':
-				// Initialize uniform grid
-				for (let mu = 0; mu < settings.muRes; mu++)
-					for (let x = 1; x < settings.xRes; x++)
-						this.grid.push(new Coordinate(settings.muRange[0] + mu / settings.muRes * settings.muSpan,
-							settings.xRange[0] + x / settings.xRes * settings.xSpan));
-				break;
-		}
 	}
 	private startWorkers(): boolean {
 		if (!this.workers) return false;
+		console.log('Starting multithreaded computation');
 		const split: number = settings.xRes / this.workers.length;
 		let low: number = 1;
 		for (const worker of this.workers) {
@@ -275,6 +269,7 @@ class Graph {
 		return true;
 	}
 	private startSingleThread(): boolean {
+		console.log('Starting single thread');
 		// Clear previous task if running
 		if (this.timer) {
 			clearTimeout(this.timer);
@@ -350,7 +345,19 @@ class Graph {
 	}
 
 	start(): Graph {
+		this.outlet = new Outlet(this);
+		this.grid.length = 0;
+		switch (this.method) {
+			case 'iterate':
+				// Initialize uniform grid
+				for (let mu = 0; mu < settings.muRes; mu++)
+					for (let x = 1; x < settings.xRes; x++)
+						this.grid.push(new Coordinate(settings.muRange[0] + mu / settings.muRes * settings.muSpan,
+							settings.xRange[0] + x / settings.xRes * settings.xSpan));
+				break;
+		}
 		if (!this.startWorkers()) {
+			this.hash = new Set();
 			this.startSingleThread();
 		}
 		// Start updating outlet
@@ -373,7 +380,25 @@ class Graph {
 		this.outlet.stop();
 		return this;
 	}
+	clear(): boolean {
+		this.grid.length = 0;
+		return this.outlet.clear();
+	}
 }
 
 const graph = new Graph();
-graph.start();
+const ratio = window.devicePixelRatio || 1;
+new App({
+	el: '#panel',
+	data: {
+		graph: graph,
+		settings: settings,
+		canvas: new Vue({
+			el: '#plot',
+			data: {
+				height: window.innerHeight * ratio,
+				width: window.innerWidth * ratio
+			}
+		})
+	}
+});

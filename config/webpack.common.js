@@ -71,6 +71,9 @@ module.exports = function(options) {
 		 * See: http://webpack.github.io/docs/configuration.html#resolve
 		 */
 		resolve: {
+			alias: {
+				vue: 'vue/dist/vue.js'
+			},
 
 			/*
 			 * An array of extensions that should be used to resolve modules.
