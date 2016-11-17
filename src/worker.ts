@@ -1,8 +1,25 @@
 // Worker thread for app.ts
-interface Setting {
+class Setting {
+	xRange: [number, number];
+	muRange: [number, number];
+	get xSpan() {
+		return this.xRange[1] - this.xRange[0];
+	}
+	get muSpan() {
+		return this.muRange[1] - this.muRange[0];
+	}
 	xRes: number;
 	muRes: number;
 	iterations: number;
+	constructor({xRange, muRange, xRes, muRes, iterations}) {
+		xRange = xRange || [0, 1];
+		muRange = muRange || [2.9, 4];
+		this.xRange = xRange as [number, number];
+		this.muRange = muRange as [number, number];
+		this.xRes = xRes;
+		this.muRes = muRes;
+		this.iterations = iterations;
+	}
 }
 // Crude polyfill for es6 Set
 const Set = self['Set'] || class {
@@ -13,6 +30,7 @@ const Set = self['Set'] || class {
 	};
 // Run computation
 const run = (method: 'iterate' | 'mu', low: number, high: number, settings: Setting) => {
+	settings = new Setting(settings);
 	let set;
 	switch (method) {
 		case 'iterate':
@@ -21,7 +39,8 @@ const run = (method: 'iterate' | 'mu', low: number, high: number, settings: Sett
 			// Generate subset of grid
 			for (let mu = 0; mu < settings.muRes; mu++)
 				for (let x = low; x < high; x++)
-					grid.push([2.9 + mu / settings.muRes * 1.1, x / settings.xRes]);
+					grid.push([settings.muRange[0] + mu / settings.muRes * settings.muSpan,
+						settings.xRange[0] + x / settings.xRes * settings.xSpan]);
 			// Main loop
 			for (let iterations: number = 0; iterations < settings.iterations; iterations++) {
 				set = new Set();
@@ -30,7 +49,7 @@ const run = (method: 'iterate' | 'mu', low: number, high: number, settings: Sett
 					if (grid[i] === undefined) continue;
 					grid[i][1] = grid[i][0] * grid[i][1] * (1 - grid[i][1]);
 					// Remove coalesced points
-					hash = 1000 * grid[i][0] * 1000 + grid[i][1];
+					hash = 1000 * grid[i][0] + grid[i][1];
 					if (set.has(hash)) {
 						delete grid[i];
 					} else {
@@ -47,11 +66,11 @@ const run = (method: 'iterate' | 'mu', low: number, high: number, settings: Sett
 			const xVals: number[] = [];
 			// Generate subset of x-values
 			for (let x = low; x < high; x++)
-				xVals.push(x / settings.xRes);
+				xVals.push(settings.xRange[0] + x / settings.xRes * settings.xSpan);
 			// Main loop
 			for (let mu: number = 0; mu < settings.muRes; mu++) {
 				set = new Set();
-				tempMu = 2.9 + mu / settings.muRes * 1.1;
+				tempMu = settings.muRange[0] + mu / settings.muRes * settings.muSpan;
 				for (let xVal of xVals) {
 					// Iterate a bunch of times
 					for (let i = 0; i < settings.iterations - 3; i += 4) {

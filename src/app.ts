@@ -1,33 +1,57 @@
-// import { Observable } from 'rxjs/observable';
 const Chart = require('chart.js');
-interface Setting {
+class Setting {
+	xRange: [number, number];
+	muRange: [number, number];
+	get xSpan() {
+		return this.xRange[1] - this.xRange[0];
+	}
+	get muSpan() {
+		return this.muRange[1] - this.muRange[0];
+	}
 	xRes: number;
 	muRes: number;
 	iterations: number;
+	constructor({xRange, muRange, xRes, muRes, iterations}) {
+		xRange = xRange || [0, 1];
+		muRange = muRange || [2.9, 4];
+		this.xRange = xRange as [number, number];
+		this.muRange = muRange as [number, number];
+		this.xRes = xRes;
+		this.muRes = muRes;
+		this.iterations = iterations;
+	}
 }
 const PRESETS: { sparse: Setting, normal: Setting, dense: Setting } = {
-	sparse: {
+	sparse: new Setting({
+		xRange: null,
+		muRange: null,
 		xRes: 64,
 		muRes: 160,
 		iterations: 2048
-	},
-	normal: {
+	}),
+	normal: new Setting({
+		xRange: null,
+		muRange: null,
 		xRes: 128,
 		muRes: 192,
 		iterations: 2048
-	},
-	dense: {
+	}),
+	dense: new Setting({
+		xRange: null,
+		muRange: null,
 		xRes: 192,
 		muRes: 384,
 		iterations: 2048
-	}
+	})
 };
-let settings: Setting = {
-	xRes: 32,
-	muRes: 512,
-	iterations: 300
-};
-// settings = PRESETS.sparse;
+let settings: Setting = new Setting({
+	xRange: null,
+	muRange: null,
+	xRes: window.innerHeight * window.devicePixelRatio,
+	muRes: window.innerWidth * window.devicePixelRatio,
+	iterations: 3000
+});
+// settings = PRESETS.dense;
 
 class Coordinate {
 	public x: number;
@@ -39,15 +63,49 @@ class Coordinate {
 		this.x = x;
 		this.y = y;
 	}
-	dist(c: Coordinate): number {
-		return Math.sqrt((this.x - c.x)^2 + (this.y - c.y)^2);
+}
+
+class Plotter {
+	canvas: any;
+	context: CanvasRenderingContext2D;
+	imageData: ImageData;
+	data: Coordinate[];
+	constructor(canvas: HTMLCanvasElement, data: Coordinate[]) {
+		this.canvas = canvas;
+		this.data = data;
+		this.context = this.canvas.getContext('2d');
+		this.initialize();
 	}
-	eq(c: Coordinate): boolean {
-		// Ignore this.x because mu should always be equal
-		return Math.abs(this.hashable - c.hashable) <= 0.0001;
+	// Setup canvas and draw axes
+	private initialize(): void {
+		const ratio = window.devicePixelRatio || 1;
+		this.canvas.height = window.innerHeight * ratio;
+		this.canvas.width = window.innerWidth * ratio;
+		this.imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
+		// this.canvas.minX = settings.xRange[0];
+		// this.canvas.maxX = settings.xRange[1];
+		// this.canvas.minY = settings.muRange[0];
+		// this.canvas.maxY = settings.muRange[1];
 	}
-	compareTo(c: Coordinate): number {
-		return this.hashable - c.hashable;
+	// Manually set pixel
+	private set(x, y, r, g, b, a): void {
+		y = this.canvas.height - y;
+		const index = (x + y * this.canvas.width) * 4;
+
+		this.imageData.data[index] = r;
+		this.imageData.data[index + 1] = g;
+		this.imageData.data[index + 2] = b;
+		this.imageData.data[index + 3] = a;
+	}
+	// Plot point
+	plot(p: Coordinate): void {
+		const scaledX = (p.x - settings.muRange[0]) / settings.muSpan * this.canvas.width;
+		const scaledY = (p.y - settings.xRange[0]) / settings.xSpan * this.canvas.height;
+		this.set(Math.round(scaledX), Math.round(scaledY), 0, 0, 0, 255);
+	}
+	// Draw frame
+	update(): void {
+		this.context.putImageData(this.imageData, 0, 0);
 	}
 }
 
@@ -56,49 +114,73 @@ class Outlet {
 	requestId: number;
 	graph: Graph;
 	dirty: boolean;
+	method: 'chart' | 'canvas' = 'canvas';
 	constructor(graph: Graph) {
 		this.graph = graph;
-		this.chart = new Chart(document.getElementById('plot'), {
-			type: 'line',
-			data: {
-				datasets: [{
-					label: 'Scatter Dataset',
-					data: graph.grid
-				}]
-			},
-			options: {
-				scales: {
-					xAxes: [{
-						type: 'linear',
-						position: 'bottom',
-						ticks: {
-							min: 2.9,
-							steps: 11,
-							max: 4
-						}
-					}],
-					yAxes: [{
-						display: true,
-						ticks: {
-							min: 0,
-							max: 1
-						}
-					}]
-				},
-				elements: {
-					point: {
-						radius: 0.5
+		switch (this.method) {
+			case 'chart':
+				this.chart = new Chart(document.getElementById('plot'), {
+					type: 'line',
+					data: {
+						datasets: [{
+							label: 'Scatter Dataset',
+							data: graph.grid
+						}]
 					},
-				},
-				showLines: false,
-				animation: false
-			}
-		});
+					options: {
+						scales: {
+							xAxes: [{
+								type: 'linear',
+								position: 'bottom',
+								ticks: {
+									min: settings.muRange[0],
+									steps: 11,
+									max: settings.muRange[1]
+								}
+							}],
+							yAxes: [{
+								display: true,
+								ticks: {
+									min: settings.xRange[0],
+									max: settings.xRange[1]
+								}
+							}]
+						},
+						elements: {
+							point: {
+								radius: 0.5
+							},
+						},
+						showLines: false,
+						animation: false
+					}
+				});
+				break;
+			case 'canvas':
+				this.chart = new Plotter(document.getElementById('plot') as HTMLCanvasElement, graph.grid);
+				let self = this;
+				// Observe push actions
+				Object.defineProperty(graph.grid, 'push', {
+					configurable: false,
+					enumerable: false, // hide from for...in
+					writable: false,
+					value: function(): number {
+						for (let i = 0, n = this.length, l = arguments.length; i < l; i++, n++) {
+							this[n] = arguments[i];
+							self.chart.plot(arguments[i]);
+						}
+						self.dirty = true;
+						return this.length;
+					}
+				});
+				break;
+		}
 	}
 	start() {
 		// Update chart every frame
 		const step = (): void => {
-			if (this.dirty || this.graph.workers) {
+			if (this.dirty || this.method === 'chart' && this.graph.workers) {
+				console.log('yes yes yes')
 				this.chart.update();
 				this.dirty = false;
 			}
@@ -109,7 +191,7 @@ class Outlet {
 	stop() {
 		cancelAnimationFrame(this.requestId);
 		this.requestId = null;
-		if (this.dirty || this.graph.workers) {
+		if (this.dirty || this.method === 'chart' && this.graph.workers) {
 			this.chart.update();
 			this.dirty = false;
 		}
@@ -138,19 +220,20 @@ class Graph {
 			for (let thread = 0; thread < threads; thread++)
 				this.workers.push(new Worker('worker.js'))
 		}
-		this.initialize();
 		this.outlet = new Outlet(this);
+		this.initialize();
 	}
 
 	private initialize(): void {
-		this.grid = [];
+		this.grid.length = 0;
 		this.hash = new Set();
 		switch (this.method) {
 			case 'iterate':
 				// Initialize uniform grid
 				for (let mu = 0; mu < settings.muRes; mu++)
 					for (let x = 1; x < settings.xRes; x++)
-						this.grid.push(new Coordinate(2.9 + mu / settings.muRes * 1.1, x / settings.xRes));
+						this.grid.push(new Coordinate(settings.muRange[0] + mu / settings.muRes * settings.muSpan,
+							settings.xRange[0] + x / settings.xRes * settings.xSpan));
 				break;
 		}
 	}
@@ -230,11 +313,11 @@ class Graph {
 				let tempMu: number;
 				const xVals: number[] = [];
 				for (let x = 1; x < settings.xRes; x++)
-					xVals.push(x / settings.xRes);
+					xVals.push(settings.xRange[0] + x / settings.xRes * settings.xSpan);
 				// Main loop
 				this.timer = window.setInterval(() => {
 					this.hash = new Set();
-					tempMu = 2.9 + mu++ / settings.muRes * 1.1;
+					tempMu = settings.muRange[0] + mu++ / settings.muRes * settings.muSpan;
 					for (let xVal of xVals) {
 						// Iterate a bunch of times
 						for (let i = 0; i < settings.iterations - 3; i += 4) {
