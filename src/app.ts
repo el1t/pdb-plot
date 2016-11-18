@@ -83,6 +83,7 @@ class Plotter {
 	}
 	clear(): boolean {
 		this.imageData.data.fill(0);
+		this.update();
 		return true;
 	}
 }

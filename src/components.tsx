@@ -19,27 +19,24 @@ export default class App extends Vue {
 		this.graph.clear();
 	}
 	render(h: Vue.CreateElement) {
-		const self = this;
 		const props = {
-			get Iterations()         { return self.settings.iterations; },
-			set Iterations(n)        { self.settings.iterations = n; },
-			get ['mu Resolution']()  { return self.settings.muRes; },
-			set ['mu Resolution'](n) { self.settings.muRes = n; },
-			get ['x Resolution']()   { return self.settings.xRes; },
-			set ['x Resolution'](n)  { self.settings.xRes = n; },
-			get ['Canvas Width']()   { return self.canvas.width; },
-			set ['Canvas Width'](n)  { self.canvas.width = n; },
-			get ['Canvas Height']()  { return self.canvas.height; },
-			set ['Canvas Height'](n) { self.canvas.height = n; }
+			'Iterations'    : ['settings', 'iterations'],
+			'mu Resolution' : ['settings', 'muRes'],
+			'x Resolution'  : ['settings', 'xRes'],
+			'Canvas Width'  : ['canvas', 'width'],
+			'Canvas Height' : ['canvas', 'height'],
 		};
 		return (
 			<aside id='panel'>
-				{Object.keys(props).map((prop) => (
+				{Object.keys(props).map((key) => {
+					const [prop, value] = props[key];
+					return (
 					<label>
-						{prop}
-						<input domPropsValue={props[prop]} onInput={(e: Event) => props[prop] = (e.target as HTMLInputElement).value}/>
+						{key}
+						<input domPropsValue={this[prop][value]}
+						       onInput={(e: Event) => this[prop][value] = (e.target as HTMLInputElement).value}/>
 					</label>
-				))}
+				)})}
 				<button onClick={this.start}>Start</button>
 				<button onClick={this.stop}>Stop</button>
 				<button onClick={this.clear}>Clear</button>
