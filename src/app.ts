@@ -1,6 +1,6 @@
-import App from 'components';
-import Vue = require("vue");
-const Chart = require('chart.js');
+import Vue = require('vue');
+import { App, Canvas } from 'components';
+
 export class Setting {
 	xRange: [number, number];
 	muRange: [number, number];
@@ -23,29 +23,6 @@ export class Setting {
 		this.iterations = iterations;
 	}
 }
-const PRESETS: { sparse: Setting, normal: Setting, dense: Setting } = {
-	sparse: new Setting({
-		xRange: null,
-		muRange: null,
-		xRes: 64,
-		muRes: 160,
-		iterations: 2048
-	}),
-	normal: new Setting({
-		xRange: null,
-		muRange: null,
-		xRes: 128,
-		muRes: 192,
-		iterations: 2048
-	}),
-	dense: new Setting({
-		xRange: null,
-		muRange: null,
-		xRes: 192,
-		muRes: 384,
-		iterations: 2048
-	})
-};
 let settings: Setting = new Setting({
 	xRange: null,
 	muRange: null,
@@ -53,8 +30,6 @@ let settings: Setting = new Setting({
 	muRes: window.innerWidth * window.devicePixelRatio,
 	iterations: 3000
 });
-// settings = PRESETS.dense;
-
 class Coordinate {
 	public x: number;
 	public y: number;
@@ -117,72 +92,29 @@ class Outlet {
 	requestId: number;
 	graph: Graph;
 	dirty: boolean;
-	method: 'chart' | 'canvas' = 'canvas';
 	constructor(graph: Graph) {
 		this.graph = graph;
-		switch (this.method) {
-			case 'chart':
-				this.chart = new Chart(document.getElementById('plot'), {
-					type: 'line',
-					data: {
-						datasets: [{
-							label: 'Scatter Dataset',
-							data: graph.grid
-						}]
-					},
-					options: {
-						scales: {
-							xAxes: [{
-								type: 'linear',
-								position: 'bottom',
-								ticks: {
-									min: settings.muRange[0],
-									steps: 11,
-									max: settings.muRange[1]
-								}
-							}],
-							yAxes: [{
-								display: true,
-								ticks: {
-									min: settings.xRange[0],
-									max: settings.xRange[1]
-								}
-							}]
-						},
-						elements: {
-							point: {
-								radius: 0.5
-							},
-						},
-						showLines: false,
-						animation: false
-					}
-				});
-				break;
-			case 'canvas':
-				this.chart = new Plotter(document.getElementById('plot') as HTMLCanvasElement, graph.grid);
-				let self = this;
-				// Observe push actions
-				Object.defineProperty(graph.grid, 'push', {
-					configurable: false,
-					enumerable: false, // hide from for...in
-					writable: false,
-					value: function(): number {
-						for (let i = 0, n = this.length, l = arguments.length; i < l; i++, n++) {
-							this[n] = arguments[i];
-							self.chart.plot(arguments[i]);
-						}
-						self.dirty = true;
-						return this.length;
-					}
-				});
-				break;
-		}
+		this.chart = new Plotter(document.getElementById('plot') as HTMLCanvasElement, graph.grid);
+		let self = this;
+		// Observe push actions
+		Object.defineProperty(graph.grid, 'push', {
+			configurable: false,
+			enumerable: false, // hide from for...in
+			writable: false,
+			value: function(): number {
+				for (let i = 0, n = this.length, l = arguments.length; i < l; i++, n++) {
+					this[n] = arguments[i];
+					self.chart.plot(arguments[i]);
+				}
+				self.dirty = true;
+				return this.length;
+			}
+		});
 	}
 	start() {
 		// Update chart every frame
 		const step = (): void => {
-			if (this.dirty || this.method === 'chart' && this.graph.workers) {
+			if (this.dirty) {
 				this.chart.update();
 				this.dirty = false;
 			}
@@ -193,18 +125,14 @@ class Outlet {
 	stop() {
 		cancelAnimationFrame(this.requestId);
 		this.requestId = null;
-		if (this.dirty || this.method === 'chart' && this.graph.workers) {
+		if (this.dirty) {
 			this.chart.update();
 			this.dirty = false;
 		}
 		console.log('Halted');
 	}
 	clear(): boolean {
-		switch (this.method) {
-			case 'canvas':
-				return this.chart.clear();
-		}
-		return true;
+		return this.chart.clear();
 	}
 }
 
@@ -393,7 +321,7 @@ new App({
 	data: {
 		graph: graph,
 		settings: settings,
-		canvas: new Vue({
+		canvas: new Canvas({
 			el: '#plot',
 			data: {
 				height: window.innerHeight * ratio,

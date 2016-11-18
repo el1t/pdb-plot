@@ -66,16 +66,13 @@ module.exports = function(options) {
 		 * See: http://webpack.github.io/docs/configuration.html#resolve
 		 */
 		resolve: {
-			alias: {
-				vue: 'vue/dist/vue.js'
-			},
 
 			/*
 			 * An array of extensions that should be used to resolve modules.
 			 *
 			 * See: http://webpack.github.io/docs/configuration.html#resolve-extensions
 			 */
-			extensions: ['.ts', '.js', '.json'],
+			extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
 
 			// An array of directory names to be resolved to the current directory
 			modules: [helpers.root('src'), 'node_modules'],
@@ -116,6 +113,22 @@ module.exports = function(options) {
 						'awesome-typescript-loader'
 					],
 					exclude: [/\.(spec|e2e)\.ts$/]
+				},
+
+				{
+					test: /.tsx$/,
+					loader: 'babel-loader!awesome-typescript-loader',
+						// 'babel-loader'
+					// ],
+					// query: {
+					// 	useBabel: true,
+					// 	useCache: true,
+					// 	useTranspileModule: true,
+					// 	babelOptions: {
+					// 		presets: ['es2015'],
+					// 		plugins: ['transform-vue-jsx']
+					// 	}
+					// }
 				},
 
 				/*
