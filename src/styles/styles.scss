@@ -13,8 +13,11 @@ html, body {
 	padding: 1rem;
 	position: absolute;
 	top: 0; left: 0;
-	label {
+	& > label {
 		display: block;
+		& > input {
+			margin-left: 1rem;
+		}
 	}
 }
 

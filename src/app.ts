@@ -81,6 +81,16 @@ class Plotter {
 	update(): void {
 		this.context.putImageData(this.imageData, 0, 0);
 	}
+	exportIE(filename: string): boolean {
+		if (this.canvas.msToBlob && navigator.msSaveBlob){
+			navigator.msSaveBlob(this.canvas.msToBlob(), `${filename}.png`);
+			return true;
+		}
+		return false;
+	}
+	getDataURL(): string {
+		return this.canvas.toDataURL('image/png');
+	}
 	clear(): boolean {
 		this.imageData.data.fill(0);
 		this.update();
@@ -89,7 +99,7 @@ class Plotter {
 }
 
 class Outlet {
-	chart: any;
+	chart: Plotter;
 	requestId: number;
 	graph: Graph;
 	dirty: boolean;
@@ -131,6 +141,42 @@ class Outlet {
 			this.dirty = false;
 		}
 		console.log('Halted');
+	}
+	/*
+	 * Attempt to export the chart as an image
+	 * @return success
+	 */
+	exportImage(): boolean {
+		const filename: string = 'Period Doubling Bifurcation';
+		// Attempt to save using msToBlob
+		if (this.chart.exportIE != null && this.chart.exportIE(filename))
+			return true;
+		// Save normally
+		type LegacyAnchorElement = { download: string; fireEvent: (string) => void } & HTMLAnchorElement;
+		const anchor: LegacyAnchorElement = document.createElement('a');
+		// Check for features
+		if (anchor.download == null || typeof MouseEvent !== 'function' && typeof anchor.fireEvent !== 'function')
+			return false;
+		anchor.href = this.chart.getDataURL();
+		anchor.download = `${filename}.png`;
+		if (typeof MouseEvent === 'function') {
+			event = new MouseEvent('click', {
+				view        : window,
+				bubbles     : true,
+				cancelable  : true,
+				ctrlKey     : false,
+				altKey      : false,
+				shiftKey    : false,
+				metaKey     : false,
+				button      : 0,
+				buttons     : 1,
+			});
+			anchor.dispatchEvent(event);
+		} else {
+			// For older versions of IE
+			anchor.fireEvent('onclick');
+		}
+		return true;
 	}
 	clear(): boolean {
 		return this.chart.clear();
@@ -308,6 +354,9 @@ export class Graph {
 		}
 		this.outlet.stop();
 		return this;
+	}
+	exportImage(): boolean {
+		return this.outlet.exportImage();
 	}
 	clear(): boolean {
 		this.grid.length = 0;

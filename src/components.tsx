@@ -2,6 +2,7 @@ import * as Vue from 'vue';
 import Component from 'vue-class-component';
 import { Setting, Graph } from 'app';
 
+// Settings panel component
 @Component({} as Vue.ComponentOptions<any>)
 export default class App extends Vue {
 	// initial data
@@ -9,15 +10,24 @@ export default class App extends Vue {
 	graph: Graph;
 	canvas: Canvas;
 
+	// Begin graphing
 	start() {
 		this.graph.start();
 	}
+	// Stop graphing
 	stop() {
 		this.graph.stop();
 	}
+	// Export as image, notify if failed
+	exportImage() {
+		// This could return false if unsuccessful
+		this.graph.exportImage();
+	}
+	// Clear graph
 	clear() {
 		this.graph.clear();
 	}
+	// Vue render function
 	render(h: Vue.CreateElement) {
 		const props = {
 			'Iterations'    : ['settings', 'iterations'],
@@ -39,12 +49,14 @@ export default class App extends Vue {
 				)})}
 				<button onClick={this.start}>Start</button>
 				<button onClick={this.stop}>Stop</button>
+				<button onClick={this.exportImage}>Save Image</button>
 				<button onClick={this.clear}>Clear</button>
 			</aside>
 		)
 	}
 }
 
+// Canvas component
 @Component({} as Vue.ComponentOptions<any>)
 export class Canvas extends Vue {
 	width: number;
