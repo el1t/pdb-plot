@@ -1,5 +1,5 @@
 import Vue = require('vue');
-import App, { Canvas } from 'components';
+import App, { Canvas, Notifier } from 'components';
 
 export class Setting {
 	xRange: [number, number];
@@ -153,7 +153,7 @@ class Outlet {
 			return true;
 		// Save normally
 		type LegacyAnchorElement = { download: string; fireEvent: (string) => void } & HTMLAnchorElement;
-		const anchor: LegacyAnchorElement = document.createElement('a');
+		const anchor: LegacyAnchorElement = document.createElement('a') as LegacyAnchorElement;
 		// Check for features
 		if (anchor.download == null || typeof MouseEvent !== 'function' && typeof anchor.fireEvent !== 'function')
 			return false;
@@ -377,6 +377,9 @@ new App({
 				height: window.innerHeight * ratio,
 				width: window.innerWidth * ratio
 			}
+		}),
+		notifier: new Notifier({
+			el: '#notifier',
 		})
 	}
 });

@@ -9,6 +9,7 @@ export default class App extends Vue {
 	settings: Setting;
 	graph: Graph;
 	canvas: Canvas;
+	notifier: Notifier;
 
 	// Begin graphing
 	start() {
@@ -21,14 +22,15 @@ export default class App extends Vue {
 	// Export as image, notify if failed
 	exportImage() {
 		// This could return false if unsuccessful
-		this.graph.exportImage();
+		if (!this.graph.exportImage())
+			this.notifier.alert('Unfortunately, your browser does not support this feature.', 3);
 	}
 	// Clear graph
 	clear() {
 		this.graph.clear();
 	}
 	// Vue render function
-	render(h: Vue.CreateElement) {
+	render(h: Vue.CreateElement): Vue.VNode {
 		const props = {
 			'Iterations'    : ['settings', 'iterations'],
 			'mu Resolution' : ['settings', 'muRes'],
@@ -62,7 +64,35 @@ export class Canvas extends Vue {
 	width: number;
 	height: number;
 
-	render (h) {
+	render(h: Vue.CreateElement): Vue.VNode {
 		return <canvas id="plot" domPropsWidth={this.width} domPropsHeight={this.height}/>
+	}
+}
+
+@Component({
+	props: {
+		text: '',
+		showing: false
+	}
+} as Vue.ComponentOptions<any>)
+export class Notifier extends Vue {
+	private text: string;
+	private showing: boolean;
+	private timeoutId: number;
+
+	alert(message: string, duration: number = 1): void {
+		this.text = message;
+		this.showing = true;
+		if (this.timeoutId) {
+			clearTimeout(this.timeoutId);
+			this.timeoutId = null;
+		}
+		this.timeoutId = window.setTimeout(() => {
+			this.showing = false;
+		}, duration * 1000);
+	}
+	render(h: Vue.CreateElement): Vue.VNode {
+		if (this.showing)
+			return <h1 id="notification">{this.text}</h1>
 	}
 }
