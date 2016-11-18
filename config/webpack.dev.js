@@ -10,6 +10,7 @@ const commonConfig = require('./webpack.common.js'); // the settings that are co
  * Webpack Plugins
  */
 const DefinePlugin = require('webpack/lib/DefinePlugin');
+const LoaderOptionsPlugin = require('webpack/lib/LoaderOptionsPlugin');
 const NamedModulesPlugin = require('webpack/lib/NamedModulesPlugin');
 
 /**
@@ -19,12 +20,6 @@ const ENV = process.env.ENV = process.env.NODE_ENV = 'development';
 const HOST = process.env.HOST || 'localhost';
 const PORT = process.env.PORT || 3000;
 const HMR = helpers.hasProcessFlag('hot');
-const METADATA = webpackMerge(commonConfig({ env: ENV }).metadata, {
-	host: HOST,
-	port: PORT,
-	ENV: ENV,
-	HMR: HMR
-});
 
 /**
  * Webpack configuration
@@ -33,21 +28,6 @@ const METADATA = webpackMerge(commonConfig({ env: ENV }).metadata, {
  */
 module.exports = function(options) {
 	return webpackMerge(commonConfig({ env: ENV }), {
-
-		/**
-		 * Merged metadata from webpack.common.js for index.html
-		 *
-		 * See: (custom attribute)
-		 */
-		metadata: METADATA,
-
-		/**
-		 * Switch loaders to debug mode.
-		 *
-		 * See: http://webpack.github.io/docs/configuration.html#debug
-		 */
-		debug: true,
-
 		/**
 		 * Developer tool to enhance debugging
 		 *
@@ -110,12 +90,12 @@ module.exports = function(options) {
 			 */
 			// NOTE: when adding more properties, make sure you include them in custom-typings.d.ts
 			new DefinePlugin({
-				'ENV': JSON.stringify(METADATA.ENV),
-				'HMR': METADATA.HMR,
+				'ENV': JSON.stringify(ENV),
+				'HMR': HMR,
 				'process.env': {
-					'ENV': JSON.stringify(METADATA.ENV),
-					'NODE_ENV': JSON.stringify(METADATA.ENV),
-					'HMR': METADATA.HMR,
+					'ENV': JSON.stringify(ENV),
+					'NODE_ENV': JSON.stringify(ENV),
+					'HMR': HMR,
 				}
 			}),
 
@@ -127,19 +107,22 @@ module.exports = function(options) {
 			 */
 			new NamedModulesPlugin(),
 
+			new LoaderOptionsPlugin({
+				options: {
+					/**
+					 * Static analysis linter for TypeScript advanced options configuration
+					 * Description: An extensible linter for the TypeScript language.
+					 *
+					 * See: https://github.com/wbuchwalter/tslint-loader
+					 */
+					tslint: {
+						emitErrors: false,
+						failOnHint: false,
+						resourcePath: 'src'
+					}
+				}
+			})
 		],
-
-		/**
-		 * Static analysis linter for TypeScript advanced options configuration
-		 * Description: An extensible linter for the TypeScript language.
-		 *
-		 * See: https://github.com/wbuchwalter/tslint-loader
-		 */
-		tslint: {
-			emitErrors: false,
-			failOnHint: false,
-			resourcePath: 'src'
-		},
 
 		/**
 		 * Webpack Development Server configuration
@@ -150,14 +133,13 @@ module.exports = function(options) {
 		 * See: https://webpack.github.io/docs/webpack-dev-server.html
 		 */
 		devServer: {
-			port: METADATA.port,
-			host: METADATA.host,
+			port: PORT,
+			host: HOST,
 			historyApiFallback: true,
 			watchOptions: {
 				aggregateTimeout: 300,
 				poll: 1000
-			},
-			outputPath: helpers.root('dist')
+			}
 		},
 
 		/*
@@ -167,7 +149,7 @@ module.exports = function(options) {
 		 * See: https://webpack.github.io/docs/configuration.html#node
 		 */
 		node: {
-			global: 'window',
+			global: true,
 			crypto: 'empty',
 			process: true,
 			module: false,

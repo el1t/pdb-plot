@@ -11,6 +11,8 @@ const autoprefixer = require('autoprefixer');
  */
 // problem with copy-webpack-plugin
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const DefinePlugin = require('webpack/lib/DefinePlugin');
+const LoaderOptionsPlugin = require('webpack/lib/LoaderOptionsPlugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ForkCheckerPlugin = require('awesome-typescript-loader').ForkCheckerPlugin;
 const HtmlElementsPlugin = require('./html-elements-plugin');
@@ -24,7 +26,8 @@ const HMR = helpers.hasProcessFlag('hot');
 const METADATA = {
 	title: 'Period Doubling Bifurcation',
 	baseUrl: '/',
-	isDevServer: helpers.isWebpackDevServer()
+	isDevServer: helpers.isWebpackDevServer(),
+	HMR: HMR
 };
 
 /*
@@ -35,14 +38,6 @@ const METADATA = {
 module.exports = function(options) {
 	isProd = options.env === 'production';
 	return {
-
-		/*
-		 * Static metadata for index.html
-		 *
-		 * See: (custom attribute)
-		 */
-		metadata: METADATA,
-
 		/*
 		 * Cache generated modules and chunks to improve performance for multiple incremental builds.
 		 * This is enabled by default in watch mode.
@@ -80,7 +75,7 @@ module.exports = function(options) {
 			 *
 			 * See: http://webpack.github.io/docs/configuration.html#resolve-extensions
 			 */
-			extensions: ['', '.ts', '.js', '.json'],
+			extensions: ['.ts', '.js', '.json'],
 
 			// An array of directory names to be resolved to the current directory
 			modules: [helpers.root('src'), 'node_modules'],
@@ -94,13 +89,9 @@ module.exports = function(options) {
 		 */
 		module: {
 
-			/*
-			 * An array of applied pre and post loaders.
-			 *
-			 * See: http://webpack.github.io/docs/configuration.html#module-preloaders-module-postloaders
-			 */
-			preLoaders: [
+			rules: [
 				{
+					enforce: 'pre',
 					test: /\.ts$/,
 					loader: 'string-replace-loader',
 					query: {
@@ -110,18 +101,6 @@ module.exports = function(options) {
 					},
 					include: [helpers.root('src')]
 				},
-
-			],
-
-			/*
-			 * An array of automatically applied loaders.
-			 *
-			 * IMPORTANT: The loaders here are resolved relative to the resource which they are applied to.
-			 * This means they are not resolved relative to the configuration file.
-			 *
-			 * See: http://webpack.github.io/docs/configuration.html#module-loaders
-			 */
-			loaders: [
 
 				/*
 				 * Typescript loader support for .ts and Angular 2 async routes via .async.ts
@@ -174,11 +153,10 @@ module.exports = function(options) {
 				{
 					test: /\.(jpg|png|gif)$/,
 					loader: 'file'
-				}
-			],
+				},
 
-			postLoaders: [
 				{
+					enforce: 'post',
 					test: /\.js$/,
 					loader: 'string-replace-loader',
 					query: {
@@ -188,12 +166,6 @@ module.exports = function(options) {
 					}
 				}
 			]
-		},
-
-		postcss: function() {
-			return {
-				defaults: [autoprefixer]
-			};
 		},
 
 		/*
@@ -292,6 +264,19 @@ module.exports = function(options) {
 				headTags: require('./head-config.common')
 			}),
 
+			new LoaderOptionsPlugin({
+				options: {
+					postcss: function() {
+						return {
+							defaults: [autoprefixer]
+						};
+					},
+				}
+			}),
+
+			new DefinePlugin({
+				'METADATA': JSON.stringify(METADATA)
+			})
 		],
 
 		/*
@@ -301,12 +286,12 @@ module.exports = function(options) {
 		 * See: https://webpack.github.io/docs/configuration.html#node
 		 */
 		node: {
-			global: 'window',
+			global: true,
 			crypto: 'empty',
 			process: true,
 			module: false,
 			clearImmediate: false,
-			setImmediate: false
+			setImmediate: false,
 		}
 
 	};

@@ -11,6 +11,7 @@ const commonConfig = require('./webpack.common.js'); // the settings that are co
  */
 const ProvidePlugin = require('webpack/lib/ProvidePlugin');
 const DefinePlugin = require('webpack/lib/DefinePlugin');
+const LoaderOptionsPlugin = require('webpack/lib/LoaderOptionsPlugin');
 const NormalModuleReplacementPlugin = require('webpack/lib/NormalModuleReplacementPlugin');
 const IgnorePlugin = require('webpack/lib/IgnorePlugin');
 const DedupePlugin = require('webpack/lib/optimize/DedupePlugin');
@@ -20,25 +21,13 @@ const WebpackMd5Hash = require('webpack-md5-hash');
 /**
  * Webpack Constants
  */
+const HMR = helpers.hasProcessFlag('hot');
 const ENV = process.env.NODE_ENV = process.env.ENV = 'production';
-const HOST = process.env.HOST || 'localhost';
-const PORT = process.env.PORT || 8080;
-const METADATA = webpackMerge(commonConfig({ env: ENV }).metadata, {
-	host: HOST,
-	port: PORT,
-	ENV: ENV,
-	HMR: false
-});
+// const HOST = process.env.HOST || 'localhost';
+// const PORT = process.env.PORT || 8080;
 
 module.exports = function(env) {
 	return webpackMerge(commonConfig({ env: ENV }), {
-
-		/**
-		 * Switch loaders to debug mode.
-		 *
-		 * See: http://webpack.github.io/docs/configuration.html#debug
-		 */
-		debug: false,
 
 		/**
 		 * Developer tool to enhance debugging
@@ -88,10 +77,6 @@ module.exports = function(env) {
 
 		},
 
-		sassLoader: {
-			outputStyle: 'compressed'
-		},
-
 		/**
 		 * Add additional plugins to the compiler.
 		 *
@@ -128,12 +113,12 @@ module.exports = function(env) {
 			 */
 			// NOTE: when adding more properties make sure you include them in custom-typings.d.ts
 			new DefinePlugin({
-				'ENV': JSON.stringify(METADATA.ENV),
-				'HMR': METADATA.HMR,
+				'ENV': JSON.stringify(ENV),
+				'HMR': HMR,
 				'process.env': {
-					'ENV': JSON.stringify(METADATA.ENV),
-					'NODE_ENV': JSON.stringify(METADATA.ENV),
-					'HMR': METADATA.HMR,
+					'ENV': JSON.stringify(ENV),
+					'NODE_ENV': JSON.stringify(ENV),
+					'HMR': HMR,
 				}
 			}),
 
@@ -201,36 +186,43 @@ module.exports = function(env) {
 			//   threshold: 2 * 1024
 			// })
 
+			new LoaderOptionsPlugin({
+				options: {
+					sassLoader: {
+						outputStyle: 'compressed'
+					},
+					/**
+					 * Static analysis linter for TypeScript advanced options configuration
+					 * Description: An extensible linter for the TypeScript language.
+					 *
+					 * See: https://github.com/wbuchwalter/tslint-loader
+					 */
+					tslint: {
+						emitErrors: true,
+						failOnHint: true,
+						resourcePath: 'src'
+					},
+
+					/**
+					 * Html loader advanced options
+					 *
+					 * See: https://github.com/webpack/html-loader#advanced-options
+					 */
+					// TODO: Need to workaround html syntax => #id [bind] (event)
+					htmlLoader: {
+						minimize: true,
+						removeAttributeQuotes: false,
+						caseSensitive: true,
+						customAttrSurround: [
+							[/#/, /(?:)/],
+							[/\[?\(?/, /(?:)/]
+						],
+						customAttrAssign: [/\)?\]?=/]
+					},
+				}
+			})
+
 		],
-
-		/**
-		 * Static analysis linter for TypeScript advanced options configuration
-		 * Description: An extensible linter for the TypeScript language.
-		 *
-		 * See: https://github.com/wbuchwalter/tslint-loader
-		 */
-		tslint: {
-			emitErrors: true,
-			failOnHint: true,
-			resourcePath: 'src'
-		},
-
-		/**
-		 * Html loader advanced options
-		 *
-		 * See: https://github.com/webpack/html-loader#advanced-options
-		 */
-		// TODO: Need to workaround html syntax => #id [bind] (event)
-		htmlLoader: {
-			minimize: true,
-			removeAttributeQuotes: false,
-			caseSensitive: true,
-			customAttrSurround: [
-				[/#/, /(?:)/],
-				[/\[?\(?/, /(?:)/]
-			],
-			customAttrAssign: [/\)?\]?=/]
-		},
 
 		/*
 		 * Include polyfills or mocks for various node stuff
@@ -239,7 +231,7 @@ module.exports = function(env) {
 		 * See: https://webpack.github.io/docs/configuration.html#node
 		 */
 		node: {
-			global: 'window',
+			global: true,
 			crypto: 'empty',
 			process: false,
 			module: false,

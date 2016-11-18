@@ -5,9 +5,9 @@
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<title><%= webpackConfig.metadata.title %></title>
+	<title><%= METADATA.title %></title>
 
-	<meta name="description" content="<%= webpackConfig.metadata.title %>">
+	<meta name="description" content="<%= METADATA.title %>">
 
 	<% if (webpackConfig.htmlElements.headTags) { %>
 	<!-- Configured Head Tags  -->
@@ -15,18 +15,17 @@
 	<% } %>
 
 	<!-- base url -->
-	<base href="<%= webpackConfig.metadata.baseUrl %>">
+	<base href="<%= METADATA.baseUrl %>">
 
 	<!--<link href="styles/styles.css" rel="stylesheet">-->
 
 </head>
 
 <body>
-<aside id="panel">
-</aside>
+<aside id="panel"></aside>
 <canvas id="plot" width="1000" height="500" :width="width" :height="height"></canvas>
 
-<% if (webpackConfig.metadata.isDevServer && webpackConfig.metadata.HMR !== true) { %>
+<% if (METADATA.isDevServer && METADATA.HMR !== true) { %>
 <!-- Webpack Dev Server reload -->
 <script src="/webpack-dev-server.js"></script>
 <% } %>
