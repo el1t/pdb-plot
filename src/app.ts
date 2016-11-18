@@ -1,5 +1,5 @@
 import Vue = require('vue');
-import { App, Canvas } from 'components';
+import App, { Canvas } from 'components';
 
 export class Setting {
 	xRange: [number, number];

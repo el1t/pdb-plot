@@ -3,7 +3,7 @@ import Component from 'vue-class-component';
 import { Setting, Graph } from 'app';
 
 @Component({} as Vue.ComponentOptions<any>)
-export class App extends Vue {
+export default class App extends Vue {
 	// initial data
 	settings: Setting;
 	graph: Graph;
@@ -27,10 +27,10 @@ export class App extends Vue {
 			set ['mu Resolution'](n) { self.settings.muRes = n; },
 			get ['x Resolution']()   { return self.settings.xRes; },
 			set ['x Resolution'](n)  { self.settings.xRes = n; },
-			get ['Canvas Width']()   { return self.canvas.width; }
-			get ['Canvas Width'](n)  { self.canvas.width = n; }
-			get ['Canvas Height']()  { return self.canvas.height; }
-			get ['Canvas Height'](n) { self.canvas.height = n; }
+			get ['Canvas Width']()   { return self.canvas.width; },
+			set ['Canvas Width'](n)  { self.canvas.width = n; },
+			get ['Canvas Height']()  { return self.canvas.height; },
+			set ['Canvas Height'](n) { self.canvas.height = n; }
 		};
 		return (
 			<aside id='panel'>
