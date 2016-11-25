@@ -291,10 +291,7 @@ export class Graph {
 					tempMu = settings.muRange[0] + mu++ / settings.muRes * settings.muSpan;
 					for (let xVal of xVals) {
 						// Iterate a bunch of times
-						for (let i = 0; i < settings.iterations - 3; i += 4) {
-							xVal = tempMu * xVal * (1 - xVal);
-							xVal = tempMu * xVal * (1 - xVal);
-							xVal = tempMu * xVal * (1 - xVal);
+						for (let i = 0; i < settings.iterations; i++) {
 							xVal = tempMu * xVal * (1 - xVal);
 						}
 						// Ignore coalesced points
