@@ -13,19 +13,16 @@ export class Setting {
 	xRes: number;
 	muRes: number;
 	iterations: number;
-	constructor({xRange, muRange, xRes, muRes, iterations}) {
-		xRange = xRange || [0, 1];
-		muRange = muRange || [2.9, 4];
-		this.xRange = xRange as [number, number];
-		this.muRange = muRange as [number, number];
+	constructor({xRange = [0, 1], muRange = [2.9, 4], xRes, muRes, iterations}:
+		{xRange?: [number, number], muRange?: [number, number], xRes: number, muRes: number, iterations: number}) {
+		this.xRange = xRange;
+		this.muRange = muRange;
 		this.xRes = xRes;
 		this.muRes = muRes;
 		this.iterations = iterations;
 	}
 }
 let settings: Setting = new Setting({
-	xRange: null,
-	muRange: null,
 	xRes: window.innerHeight * window.devicePixelRatio,
 	muRes: window.innerWidth * window.devicePixelRatio,
 	iterations: 3000
@@ -36,7 +33,7 @@ class Coordinate {
 	get hashable(): number {
 		return this.x * 1000 + this.y;
 	}
-	constructor(x, y) {
+	constructor(x: number, y: number) {
 		this.x = x;
 		this.y = y;
 	}
@@ -62,7 +59,7 @@ class Plotter {
 		// this.canvas.maxY = settings.muRange[1];
 	}
 	// Manually set pixel
-	private set(x, y, r, g, b, a): void {
+	private set(x: number, y: number, r: number, g: number, b: number, a: number): void {
 		y = this.canvas.height - y;
 		const index = (x + y * this.canvas.width) * 4;
 
@@ -82,7 +79,7 @@ class Plotter {
 		this.context.putImageData(this.imageData, 0, 0);
 	}
 	exportIE(filename: string): boolean {
-		if (this.canvas.msToBlob && navigator.msSaveBlob){
+		if (this.canvas.msToBlob && navigator.msSaveBlob) {
 			navigator.msSaveBlob(this.canvas.msToBlob(), `${filename}.png`);
 			return true;
 		}
@@ -152,7 +149,7 @@ class Outlet {
 		if (this.chart.exportIE != null && this.chart.exportIE(filename))
 			return true;
 		// Save normally
-		type LegacyAnchorElement = { download: string; fireEvent: (string) => void } & HTMLAnchorElement;
+		type LegacyAnchorElement = { download: string; fireEvent: (s: string) => void } & HTMLAnchorElement;
 		const anchor: LegacyAnchorElement = document.createElement('a') as LegacyAnchorElement;
 		// Check for features
 		if (anchor.download == null || typeof MouseEvent !== 'function' && typeof anchor.fireEvent !== 'function')
@@ -194,7 +191,7 @@ export class Graph {
 
 	constructor() {
 		// Check for webworker support
-		const hasWebworker = typeof Worker === 'function';
+		const hasWebworker: boolean = typeof Worker === 'function';
 		if (hasWebworker) {
 			// Use half of available threads to save CPU for DOM refreshing
 			const threads = Math.ceil(navigator['hardwareConcurrency'] / 2) || 2;
@@ -202,7 +199,7 @@ export class Graph {
 			this.finishedWorkers = 0;
 			this.workers = [];
 			for (let thread = 0; thread < threads; thread++)
-				this.workers.push(new Worker('worker.js'))
+				this.workers.push(new Worker('worker.js'));
 		}
 	}
 	private startWorkers(): boolean {
@@ -237,6 +234,10 @@ export class Graph {
 						}
 						this.grid.push(new Coordinate(e.data[0], e.data[1]));
 					};
+					break;
+				default:
+					console.log('unknown type');
+					return;
 			}
 			worker.postMessage([this.method, Math.ceil(low), Math.ceil(low + split), settings]);
 			low += split;
@@ -308,6 +309,8 @@ export class Graph {
 					}
 				}, 10);
 				break;
+			default:
+				return;
 		}
 		return true;
 	}
@@ -315,7 +318,7 @@ export class Graph {
 		console.log(`Deleting worker #${this.workers.indexOf(worker) + 1}`);
 		delete this.workers[this.workers.indexOf(worker)];
 		// If all workers are finished, stop rendering
-		if (++this.finishedWorkers == this.workers.length)
+		if (++this.finishedWorkers === this.workers.length)
 			this.outlet.stop();
 	}
 
@@ -329,6 +332,8 @@ export class Graph {
 					for (let x = 1; x < settings.xRes; x++)
 						this.grid.push(new Coordinate(settings.muRange[0] + mu / settings.muRes * settings.muSpan,
 							settings.xRange[0] + x / settings.xRes * settings.xSpan));
+				break;
+			default:
 				break;
 		}
 		if (!this.startWorkers()) {

@@ -240,4 +240,4 @@ module.exports = function(env) {
 		}
 
 	});
-}
+};

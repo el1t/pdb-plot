@@ -11,18 +11,21 @@ class Setting {
 	xRes: number;
 	muRes: number;
 	iterations: number;
-	constructor({xRange, muRange, xRes, muRes, iterations}) {
-		xRange = xRange || [0, 1];
-		muRange = muRange || [2.9, 4];
-		this.xRange = xRange as [number, number];
-		this.muRange = muRange as [number, number];
+	constructor({xRange = [0, 1], muRange = [2.9, 4], xRes, muRes, iterations}:
+		{xRange?: [number, number], muRange?: [number, number], xRes: number, muRes: number, iterations: number}) {
+		this.xRange = xRange;
+		this.muRange = muRange;
 		this.xRes = xRes;
 		this.muRes = muRes;
 		this.iterations = iterations;
 	}
 }
 // Crude polyfill for es6 Set
-const Set = self['Set'] || class {
+interface Set<T> {
+	has(key: T): boolean;
+	add(key: T): Set<T>;
+}
+const Set: any = (self as any)['Set'] || class {
 		hash: any;
 		constructor() { this.hash = {}; }
 		has(key: any): boolean { return key in this.hash; }
@@ -31,7 +34,7 @@ const Set = self['Set'] || class {
 // Run computation
 const run = (method: 'iterate' | 'mu', low: number, high: number, settings: Setting) => {
 	settings = new Setting(settings);
-	let set;
+	let set: Set<number>;
 	switch (method) {
 		case 'iterate':
 			const grid: number[][] = [];
@@ -87,6 +90,8 @@ const run = (method: 'iterate' | 'mu', low: number, high: number, settings: Sett
 				}
 			}
 			break;
+		default:
+
 	}
 	(self as any).postMessage(false);
 	self.close();

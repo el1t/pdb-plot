@@ -126,3 +126,8 @@ interface NodeModule extends WebpackModule {
 }
 interface Global extends GlobalEnvironment {
 }
+
+
+interface Navigator extends Navigator {
+	hardwareConcurrency?: number;
+}

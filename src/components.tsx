@@ -1,6 +1,7 @@
 import * as Vue from 'vue';
 import Component from 'vue-class-component';
-import { Setting, Graph } from 'app';
+import { Graph } from 'app';
+import { Setting } from 'app';
 
 // Settings panel component
 @Component({} as Vue.ComponentOptions<any>)
@@ -31,7 +32,7 @@ export default class App extends Vue {
 	}
 	// Vue render function
 	render(h: Vue.CreateElement): Vue.VNode {
-		const props = {
+		const props: { [key: string]: ['settings' | 'canvas', string] } = {
 			'Iterations'    : ['settings', 'iterations'],
 			'mu Resolution' : ['settings', 'muRes'],
 			'x Resolution'  : ['settings', 'xRes'],
@@ -40,13 +41,13 @@ export default class App extends Vue {
 		};
 		return (
 			<aside id='panel'>
-				{Object.keys(props).map((key) => {
+				{Object.keys(props).map((key: string) => {
 					const [prop, value] = props[key];
 					return (
 					<label>
 						{key}
-						<input domPropsValue={this[prop][value]}
-						       onInput={(e: Event) => this[prop][value] = (e.target as HTMLInputElement).value}/>
+						<input domPropsValue={(this as any)[prop][value]}
+						       onInput={(e: Event) => (this as any)[prop][value] = (e.target as HTMLInputElement).value}/>
 					</label>
 				)})}
 				<button onClick={this.start}>Start</button>
@@ -54,7 +55,7 @@ export default class App extends Vue {
 				<button onClick={this.exportImage}>Save Image</button>
 				<button onClick={this.clear}>Clear</button>
 			</aside>
-		)
+		);
 	}
 }
 
@@ -65,7 +66,7 @@ export class Canvas extends Vue {
 	height: number;
 
 	render(h: Vue.CreateElement): Vue.VNode {
-		return <canvas id="plot" domPropsWidth={this.width} domPropsHeight={this.height}/>
+		return <canvas id="plot" domPropsWidth={this.width} domPropsHeight={this.height}/>;
 	}
 }
 
@@ -93,6 +94,6 @@ export class Notifier extends Vue {
 	}
 	render(h: Vue.CreateElement): Vue.VNode {
 		if (this.showing)
-			return <h1 id="notification">{this.text}</h1>
+			return <h1 id="notification">{this.text}</h1>;
 	}
 }

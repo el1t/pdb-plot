@@ -118,17 +118,6 @@ module.exports = function(options) {
 				{
 					test: /.tsx$/,
 					loader: 'babel-loader!awesome-typescript-loader',
-						// 'babel-loader'
-					// ],
-					// query: {
-					// 	useBabel: true,
-					// 	useCache: true,
-					// 	useTranspileModule: true,
-					// 	babelOptions: {
-					// 		presets: ['es2015'],
-					// 		plugins: ['transform-vue-jsx']
-					// 	}
-					// }
 				},
 
 				/*
@@ -308,4 +297,4 @@ module.exports = function(options) {
 		}
 
 	};
-}
+};

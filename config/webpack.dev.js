@@ -158,4 +158,4 @@ module.exports = function(options) {
 		}
 
 	});
-}
+};
